@@ -8,6 +8,7 @@ include( CheckCXXSourceCompiles )
 include( CheckFunctionExists )
 include( CheckCXXCompilerFlag )
 include( FindPkgConfig )
+include( FindOpenGL )
 
 if( NOT APPLE )
 	option( NO_ASM "Disable assembly code" OFF )
@@ -220,6 +221,45 @@ else( WIN32 )
 		add_definitions( -DHAVE_FPU_CONTROL )
 	endif( FPU_CONTROL_DIR )
 endif( WIN32 )
+
+if( X64 )
+	set( NO_ASM ON )
+endif( X64 )
+
+# Check if we have OpenGL
+
+if( NOT OPENGL_FOUND )
+	message( FATAL_ERROR "OpenGL is required for building." )
+endif( NOT OPENGL_FOUND )
+if( NOT OPENGL_GLU_FOUND )
+	message( FATAL_ERROR "OpenGL GLU is required for building." )
+endif( NOT OPENGL_GLU_FOUND )
+
+set( ZDOOM_LIBS ${ZDOOM_LIBS} ${OPENGL_LIBRARIES} )
+include_directories( ${OPENGL_INCLUDE_DIR} )
+
+
+# check for GLEW
+find_path( GLEW_INCLUDE_DIR GL/glew.h
+	PATHS "/usr/include"
+	"/usr/local/include" )
+
+if( GLEW_INCLUDE_DIR )
+	message( STATUS "GLEW include files found at ${GLEW_INCLUDE_DIR}" )
+else( GLEW_INCLUDE_DIR )
+	message( SEND_ERROR "Could not find GLEW include files" )
+endif( GLEW_INCLUDE_DIR )
+
+# GLEW include directory
+include_directories( "${GLEW_INCLUDE_DIR}" )
+
+find_library( GLEW_LIBRARY NAMES glew32 GLEW )
+
+if( NOT GLEW_LIBRARY )
+	message( SEND_ERROR "Could not find GLEW library files" )
+endif( NOT GLEW_LIBRARY )
+	
+set( ZDOOM_LIBS ${ZDOOM_LIBS} ${GLEW_LIBRARY} )
 
 
 set( OAL_SOURCES sound/oalsound.cpp )
@@ -585,6 +625,7 @@ set( PLAT_WIN32_SOURCES
 	win32/i_movie.cpp
 	win32/i_system.cpp
 	win32/st_start.cpp
+	win32/win32gliface.cpp
 	win32/win32video.cpp )
 set( PLAT_SDL_SOURCES
 	sdl/crashcatcher.c
@@ -596,6 +637,7 @@ set( PLAT_SDL_SOURCES
 	sdl/i_movie.cpp
 	sdl/i_system.cpp
 	sdl/sdlvideo.cpp
+	sdl/sdlglvideo.cpp
 	sdl/st_start.cpp )
 set( PLAT_MAC_SOURCES
 	sdl/SDLMain.m
@@ -615,6 +657,7 @@ if( WIN32 )
 	else( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
 		set( SYSTEM_SOURCES ${SYSTEM_SOURCES} win32/zdoom.rc )
 	endif( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
+
 else( WIN32 )
 	set( SYSTEM_SOURCES_DIR sdl )
 	set( SYSTEM_SOURCES ${PLAT_SDL_SOURCES} )
@@ -704,6 +747,18 @@ file( GLOB HEADER_FILES
 	textures/*.h
 	thingdef/*.h
 	xlat/*.h
+	gl/*.h
+	gl/api/*.h
+	gl/data/*.h
+	gl/dynlights/*.h
+	gl/hqnx/*.h
+	gl/models/*.h
+	gl/renderer/*.h
+	gl/scene/*.h
+	gl/shaders/*.h
+	gl/system/*.h
+	gl/textures/*.h
+	gl/utility/*.h
 	*.h
 )
 
@@ -1014,6 +1069,60 @@ add_executable( zdoom WIN32
 	menu/playermenu.cpp
 	menu/readthis.cpp
 	menu/videomenu.cpp
+	gl/data/gl_data.cpp
+	gl/data/gl_portaldata.cpp
+	gl/data/gl_setup.cpp
+	gl/data/gl_vertexbuffer.cpp
+	gl/dynlights/a_dynlight.cpp
+	gl/utility/gl_clock.cpp
+	gl/utility/gl_cycler.cpp
+	gl/utility/gl_geometric.cpp
+	gl/renderer/gl_renderer.cpp
+	gl/renderer/gl_renderstate.cpp
+	gl/renderer/gl_lightdata.cpp
+	gl/hqnx/init.cpp
+	gl/hqnx/hq2x.cpp
+	gl/hqnx/hq3x.cpp
+	gl/hqnx/hq4x.cpp
+	gl/textures/gl_hwtexture.cpp
+	gl/textures/gl_texture.cpp
+	gl/textures/gl_material.cpp
+	gl/textures/gl_hirestex.cpp
+	gl/textures/gl_bitmap.cpp
+	gl/textures/gl_translate.cpp
+	gl/textures/gl_hqresize.cpp
+	gl/textures/gl_skyboxtexture.cpp
+	gl/scene/gl_bsp.cpp
+	gl/scene/gl_fakeflat.cpp
+	gl/scene/gl_clipper.cpp
+	gl/scene/gl_decal.cpp
+	gl/scene/gl_drawinfo.cpp
+	gl/scene/gl_flats.cpp
+	gl/scene/gl_walls.cpp
+	gl/scene/gl_sprite.cpp
+	gl/scene/gl_skydome.cpp
+	gl/scene/gl_renderhacks.cpp
+	gl/scene/gl_weapon.cpp
+	gl/scene/gl_scene.cpp
+	gl/scene/gl_sky.cpp
+	gl/scene/gl_portal.cpp
+	gl/scene/gl_walls_draw.cpp
+	gl/scene/gl_vertex.cpp
+	gl/scene/gl_spritelight.cpp
+	gl/dynlights/gl_dynlight.cpp
+	gl/dynlights/gl_glow.cpp
+	gl/dynlights/gl_dynlight1.cpp
+	gl/dynlights/gl_lightbuffer.cpp
+	gl/shaders/gl_shader.cpp
+	gl/shaders/gl_texshader.cpp
+	gl/system/gl_interface.cpp
+	gl/system/gl_framebuffer.cpp
+	gl/system/gl_menu.cpp
+	gl/system/gl_wipe.cpp
+	gl/models/gl_models_md3.cpp
+	gl/models/gl_models_md2.cpp
+	gl/models/gl_models.cpp
+	gl/models/gl_voxels.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
 	oplsynth/mlopl_io.cpp
@@ -1211,6 +1320,17 @@ source_group("Games\\Raven Shared" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_D
 source_group("Games\\Strife Game" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_strife/.+")
 source_group("Intermission" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/intermission/.+")
 source_group("Menu" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/menu/.+")
+source_group("OpenGL Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
+source_group("OpenGL Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/data/.+")
+source_group("OpenGL Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/dynlights/.+")
+source_group("OpenGL Renderer\\HQ Resize" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/hqnx/.+")
+source_group("OpenGL Renderer\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/models/.+")
+source_group("OpenGL Renderer\\Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/renderer/.+")
+source_group("OpenGL Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/scene/.+")
+source_group("OpenGL Renderer\\Shaders" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/shaders/.+")
+source_group("OpenGL Renderer\\System" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/system/.+")
+source_group("OpenGL Renderer\\Textures" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/textures/.+")
+source_group("OpenGL Renderer\\Utilities" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/utility/.+")
 source_group("Render Core\\Render Headers" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/r_.+\\.h$")
 source_group("Render Core\\Render Sources" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/r_.+\\.cpp$")
 source_group("Render Data\\Resource Headers" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/r_data/.+\\.h$")

@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 2.4 )
-project(ZDoom)
+project(GZDoom)
 
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} )
 include( CreateLaunchers )
@@ -69,7 +69,7 @@ IF( NOT CMAKE_BUILD_TYPE )
 ENDIF( NOT CMAKE_BUILD_TYPE )
 
 set( ZDOOM_OUTPUT_DIR ${CMAKE_BINARY_DIR} CACHE PATH "Directory where zdoom.pk3 and the executable will be created." )
-set( ZDOOM_EXE_NAME "zdoom" CACHE FILEPATH "Name of the executable to create." )
+set( ZDOOM_EXE_NAME "gzdoom" CACHE FILEPATH "Name of the executable to create" )
 if( MSVC )
 	# Allow the user to use ZDOOM_OUTPUT_DIR as a single release point.
 	# Use zdoom, zdoomd, zdoom64, and zdoomd64 for the binary names
@@ -91,7 +91,7 @@ find_package( BZip2 )
 find_package( JPEG )
 find_package( ZLIB )
 # GME
-find_path( GME_INCLUDE_DIR gme.h )
+find_path( GME_INCLUDE_DIR gme/gme.h )
 find_library( GME_LIBRARIES gme )
 mark_as_advanced( GME_INCLUDE_DIR GME_LIBRARIES )
 FIND_PACKAGE_HANDLE_STANDARD_ARGS( GME
@@ -106,7 +106,8 @@ if( MSVC )
 	# String pooling
 	# Function-level linking
 	# Disable run-time type information
-	set( ALL_C_FLAGS "/GF /Gy /GR-" )
+	# Set floating point model to fast or the GL render will suffer for it.
+	set( ALL_C_FLAGS "/GF /Gy /GR- /fp:fast" )
 	
 	if( CMAKE_SIZEOF_VOID_P MATCHES "4")
 		# SSE2 option (mostly to switch it off in VC2012 and later where it's the default
@@ -222,6 +223,8 @@ add_subdirectory( tools )
 add_subdirectory( dumb )
 add_subdirectory( gdtoa )
 add_subdirectory( wadsrc )
+add_subdirectory( wadsrc_bm )
+add_subdirectory( wadsrc_lights )
 add_subdirectory( src )
 
 if( NOT WIN32 AND NOT APPLE )
