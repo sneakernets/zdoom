@@ -35,8 +35,12 @@
 #ifndef __I_SOUND__
 #define __I_SOUND__
 
+#include <memory>
+
 #include "doomtype.h"
 #include "i_soundinternal.h"
+
+class FileReader;
 
 enum ECodecType
 {
@@ -82,6 +86,8 @@ public:
 
 typedef bool (*SoundStreamCallback)(SoundStream *stream, void *buff, int len, void *userdata);
 
+struct SoundDecoder;
+
 class SoundRenderer
 {
 public:
@@ -101,7 +107,8 @@ public:
 
 	// Streaming sounds.
 	virtual SoundStream *CreateStream (SoundStreamCallback callback, int buffbytes, int flags, int samplerate, void *userdata) = 0;
-	virtual SoundStream *OpenStream (const char *filename, int flags, int offset, int length) = 0;
+    virtual SoundStream *OpenStream (std::auto_ptr<FileReader> reader, int flags) = 0;
+	virtual SoundStream *OpenStream (const char *url, int flags);
 
 	// Starts a sound.
 	virtual FISoundChannel *StartSound (SoundHandle sfx, float vol, int pitch, int chanflags, FISoundChannel *reuse_chan) = 0;
@@ -150,6 +157,9 @@ public:
 	virtual short *DecodeSample(int outlen, const void *coded, int sizebytes, ECodecType type);
 
 	virtual void DrawWaveDebug(int mode);
+
+protected:
+    virtual SoundDecoder *CreateDecoder(FileReader *reader);
 };
 
 extern SoundRenderer *GSnd;

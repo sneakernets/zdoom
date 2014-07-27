@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <zlib.h>
 #include "bzlib.h"
-#include "LzmaDec.h"
 #include "doomtype.h"
 #include "m_swap.h"
 
@@ -257,6 +256,8 @@ private:
 // Wraps around a FileReader to decompress a lzma stream
 class FileReaderLZMA : public FileReaderBase
 {
+	struct StreamPointer;
+
 public:
 	FileReaderLZMA (FileReader &file, size_t uncompressed_size, bool zip);
 	~FileReaderLZMA ();
@@ -308,7 +309,7 @@ private:
 
 	FileReader &File;
 	bool SawEOF;
-	CLzmaDec Stream;
+	StreamPointer *Streamp;	// anonymous pointer to LKZA decoder struct - to avoid including the LZMA headers globally
 	size_t Size;
 	size_t InPos, InSize;
 	size_t OutProcessed;
@@ -335,6 +336,24 @@ protected:
 	const char * bufptr;
 };
 
+class MemoryArrayReader : public FileReader
+{
+public:
+    MemoryArrayReader (const char *buffer, long length);
+    ~MemoryArrayReader ();
+
+    virtual long Tell () const;
+    virtual long Seek (long offset, int origin);
+    virtual long Read (void *buffer, long len);
+    virtual char *Gets(char *strbuf, int len);
+    virtual const char *GetBuffer() const { return (char*)&buf[0]; }
+    TArray<BYTE> &GetArray() { return buf; }
+
+    void UpdateLength() { Length = buf.Size(); }
+
+protected:
+    TArray<BYTE> buf;
+};
 
 
 #endif

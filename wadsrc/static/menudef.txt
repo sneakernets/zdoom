@@ -1157,7 +1157,7 @@ OptionValue  FallingDM
 	3, "Strife"
 }
 
-OptionValue  JumpCrouch
+OptionValue  JumpCrouchFreeLook
 {
 	0, "Default"
 	1, "Off"
@@ -1189,9 +1189,9 @@ OptionMenu GameplayOptions
 	Option "Degeneration",			"sv_degeneration", "YesNo"
 	Option "Allow Autoaim",			"sv_noautoaim", "NoYes"
 	Option "Allow Suicide",			"sv_disallowsuicide", "NoYes"
-	Option "Allow jump",			"sv_jump", "JumpCrouch"
-	Option "Allow crouch",			"sv_crouch", "JumpCrouch"
-	Option "Allow freelook",		"sv_nofreelook", "NoYes"
+	Option "Allow jump",			"sv_jump", "JumpCrouchFreeLook"
+	Option "Allow crouch",			"sv_crouch", "JumpCrouchFreeLook"
+	Option "Allow freelook",		"sv_freelook", "JumpCrouchFreeLook"
 	Option "Allow FOV",				"sv_nofov", "NoYes"
 	Option "Allow BFG aiming",		"sv_nobfgaim", "NoYes"
 	Option "Allow automap",			"sv_noautomap", "NoYes"
@@ -1448,9 +1448,6 @@ OptionMenu OpenALSoundItems
 	Title "OPENAL OPTIONS"
 	Option "Playback device",	"snd_aldevice",	"ALDevices"
 	Option "Enable EFX",		"snd_efx",		"OnOff"
-	StaticText	" "
-	StaticText	"Requires EFX", 1
-	Slider	"Underwater absorption",	"snd_waterabsorption", 0.0, 10.0, 0.5
 }
 
 
@@ -1529,7 +1526,7 @@ OptionMenu AdvSoundOptions
 
 OptionValue ModReplayers
 {
-	0.0, "FMOD"
+	0.0, "Sound System"
 	1.0, "foo_dumb"
 }
 

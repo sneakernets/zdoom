@@ -38,6 +38,7 @@
 #include "templates.h"
 #include "doomdef.h"
 #include "m_swap.h"
+#include "files.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -234,29 +235,31 @@ FString PseudoMIDIDevice::GetStats()
 
 //==========================================================================
 //
-// FMODMIDIDevice :: Open
+// SndSysMIDIDevice :: Open
 //
 //==========================================================================
 
-int FMODMIDIDevice::Open(void (*callback)(unsigned int, void *, DWORD, DWORD), void *userdata)
+int SndSysMIDIDevice::Open(void (*callback)(unsigned int, void *, DWORD, DWORD), void *userdata)
 {
 	return 0;
 }
 
 //==========================================================================
 //
-// FMODMIDIDevice :: Preprocess
+// SndSysMIDIDevice :: Preprocess
 //
 // Create a standard MIDI file and stream it.
 //
 //==========================================================================
 
-bool FMODMIDIDevice::Preprocess(MIDIStreamer *song, bool looping)
+bool SndSysMIDIDevice::Preprocess(MIDIStreamer *song, bool looping)
 {
-	TArray<BYTE> midi;
+    std::auto_ptr<MemoryArrayReader> reader(new MemoryArrayReader(NULL, 0));
+    song->CreateSMF(reader->GetArray(), looping ? 0 : 1);
+    reader->UpdateLength();
 
-	song->CreateSMF(midi, looping ? 0 : 1);
-	bLooping = looping;
-	Stream = GSnd->OpenStream((char *)&midi[0], looping ? SoundStream::Loop : 0, -1, midi.Size());
-	return false;
+    bLooping = looping;
+    Stream = GSnd->OpenStream(std::auto_ptr<FileReader>(reader.release()),
+                              looping ? SoundStream::Loop : 0);
+    return false;
 }

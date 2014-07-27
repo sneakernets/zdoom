@@ -26,6 +26,7 @@
 #include <io.h>
 #endif
 #include <fcntl.h>
+#include <memory>
 
 #include "i_system.h"
 #include "i_sound.h"
@@ -1311,52 +1312,36 @@ sfxinfo_t *S_LoadSound(sfxinfo_t *sfx)
 		int size = Wads.LumpLength(sfx->lumpnum);
 		if (size > 0)
 		{
-			BYTE *sfxdata;
-			BYTE *sfxstart;
 			FWadLump wlump = Wads.OpenLumpNum(sfx->lumpnum);
-			sfxstart = sfxdata = new BYTE[size];
+			BYTE *sfxdata = new BYTE[size];
 			wlump.Read(sfxdata, size);
-			SDWORD len = LittleLong(((SDWORD *)sfxdata)[1]);
+			SDWORD dmxlen = LittleLong(((SDWORD *)sfxdata)[1]);
 
 			// If the sound is voc, use the custom loader.
-			if (strncmp ((const char *)sfxstart, "Creative Voice File", 19) == 0)
-			{
-				sfx->data = GSnd->LoadSoundVoc(sfxstart, len);
-			}
 			// If the sound is raw, just load it as such.
 			// Otherwise, try the sound as DMX format.
-			// If that fails, let FMOD try and figure it out.
-			else if (sfx->bLoadRAW ||
-				(((BYTE *)sfxdata)[0] == 3 && ((BYTE *)sfxdata)[1] == 0 && len <= size - 8))
+			// If that fails, let the sound system try and figure it out.
+			if (strncmp ((const char *)sfxdata, "Creative Voice File", 19) == 0)
 			{
-				int frequency;
-
-				if (sfx->bLoadRAW)
-				{
-					len = Wads.LumpLength (sfx->lumpnum);
-					frequency = (sfx->bForce22050 ? 22050 : 11025);
-				}
-				else
-				{
-					frequency = LittleShort(((WORD *)sfxdata)[1]);
-					if (frequency == 0)
-					{
-						frequency = 11025;
-					}
-					sfxstart = sfxdata + 8;
-				}
-				sfx->data = GSnd->LoadSoundRaw(sfxstart, len, frequency, 1, 8, sfx->LoopStart);
+				sfx->data = GSnd->LoadSoundVoc(sfxdata, size);
+			}
+			else if (sfx->bLoadRAW)
+			{
+				int frequency = (sfx->bForce22050 ? 22050 : 11025);
+				sfx->data = GSnd->LoadSoundRaw(sfxdata, size, frequency, 1, 8, sfx->LoopStart);
+			}
+			else if (((BYTE *)sfxdata)[0] == 3 && ((BYTE *)sfxdata)[1] == 0 && dmxlen <= size - 8)
+			{
+				int frequency = LittleShort(((WORD *)sfxdata)[1]);
+				if (frequency == 0) frequency = 11025;
+				sfx->data = GSnd->LoadSoundRaw(sfxdata+8, dmxlen, frequency, 1, 8, sfx->LoopStart);
 			}
 			else
 			{
-				len = Wads.LumpLength (sfx->lumpnum);
-				sfx->data = GSnd->LoadSound(sfxstart, len);
+				sfx->data = GSnd->LoadSound(sfxdata, size);
 			}
-			
-			if (sfxdata != NULL)
-			{
-				delete[] sfxdata;
-			}
+
+			delete[] sfxdata;
 		}
 
 		if (!sfx->data.isValid())
@@ -2435,7 +2420,7 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 	else
 	{
 		int lumpnum = -1;
-		int offset = 0, length = 0;
+		int length = 0;
 		int device = MDEV_DEFAULT;
 		MusInfo *handle = NULL;
 		FName musicasname = musicname;
@@ -2456,6 +2441,7 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 			musicname += 7;
 		}
 
+        std::auto_ptr<FileReader> reader;
 		if (!FileExists (musicname))
 		{
 			if ((lumpnum = Wads.CheckNumForFullName (musicname, true, ns_music)) == -1)
@@ -2485,8 +2471,6 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 					// shut down old music before reallocating and overwriting the cache!
 					S_StopMusic (true);
 
-					offset = -1;							// this tells the low level code that the music 
-															// is being used from memory
 					length = Wads.LumpLength (lumpnum);
 					if (length == 0)
 					{
@@ -2494,15 +2478,16 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 					}
 					musiccache.Resize(length);
 					Wads.ReadLump(lumpnum, &musiccache[0]);
+
+                    reader.reset(new MemoryReader((const char*)&musiccache[0], musiccache.Size()));
 				}
 				else
 				{
-					offset = Wads.GetLumpOffset (lumpnum);
-					length = Wads.LumpLength (lumpnum);
-					if (length == 0)
+					if (Wads.LumpLength (lumpnum) == 0)
 					{
 						return false;
 					}
+					reader.reset(Wads.ReopenLumpNum(lumpnum));
 				}
 			}
 		}
@@ -2525,15 +2510,9 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 		{
 			mus_playing.handle = handle;
 		}
-		else if (offset != -1)
-		{
-			mus_playing.handle = I_RegisterSong (lumpnum != -1 ?
-				Wads.GetWadFullName (Wads.GetLumpFile (lumpnum)) :
-				musicname, NULL, offset, length, device);
-		}
 		else
 		{
-			mus_playing.handle = I_RegisterSong (NULL, &musiccache[0], -1, length, device);
+			mus_playing.handle = I_RegisterSong (reader, device);
 		}
 	}
 

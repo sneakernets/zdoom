@@ -33,10 +33,16 @@
 **
 */
 
+#ifdef _WIN32
+#define USE_WINDOWS_DWORD
+#endif
+#include "LzmaDec.h"
+
 #include "files.h"
 #include "i_system.h"
 #include "templates.h"
 #include "m_misc.h"
+
 
 //==========================================================================
 //
@@ -370,6 +376,15 @@ extern "C" void bz_internal_error (int errcode)
 //
 //==========================================================================
 
+// This is retarded but necessary to work around the inclusion of windows.h in recent
+// LZMA versions, meaning it's no longer possible to include the LZMA headers in files.h. 
+// As a result we cannot declare the CLzmaDec member in the header so we work around
+// it my wrapping it into another struct that can be declared anonymously in the header.
+struct FileReaderLZMA::StreamPointer
+{
+	CLzmaDec Stream;
+};
+
 static void *SzAlloc(void *, size_t size) { return malloc(size); }
 static void SzFree(void *, void *address) { free(address); }
 ISzAlloc g_Alloc = { SzAlloc, SzFree };
@@ -398,20 +413,22 @@ FileReaderLZMA::FileReaderLZMA (FileReader &file, size_t uncompressed_size, bool
 
 	FillBuffer();
 
-	LzmaDec_Construct(&Stream);
-	err = LzmaDec_Allocate(&Stream, header + 4, LZMA_PROPS_SIZE, &g_Alloc);
+	Streamp = new StreamPointer;
+	LzmaDec_Construct(&Streamp->Stream);
+	err = LzmaDec_Allocate(&Streamp->Stream, header + 4, LZMA_PROPS_SIZE, &g_Alloc);
 
 	if (err != SZ_OK)
 	{
 		I_Error("FileReaderLZMA: LzmaDec_Allocate failed: %d\n", err);
 	}
 
-	LzmaDec_Init(&Stream);
+	LzmaDec_Init(&Streamp->Stream);
 }
 
 FileReaderLZMA::~FileReaderLZMA ()
 {
-	LzmaDec_Free(&Stream, &g_Alloc);
+	LzmaDec_Free(&Streamp->Stream, &g_Alloc);
+	delete Streamp;
 }
 
 long FileReaderLZMA::Read (void *buffer, long len)
@@ -426,7 +443,7 @@ long FileReaderLZMA::Read (void *buffer, long len)
 		size_t out_processed = len;
 		size_t in_processed = InSize;
 
-		err = LzmaDec_DecodeToBuf(&Stream, next_out, &out_processed, InBuff + InPos, &in_processed, finish_mode, &status);
+		err = LzmaDec_DecodeToBuf(&Streamp->Stream, next_out, &out_processed, InBuff + InPos, &in_processed, finish_mode, &status);
 		InPos += in_processed;
 		InSize -= in_processed;
 		next_out += out_processed;
@@ -526,4 +543,60 @@ long MemoryReader::Read (void *buffer, long len)
 char *MemoryReader::Gets(char *strbuf, int len)
 {
 	return GetsFromBuffer(bufptr, strbuf, len);
+}
+
+//==========================================================================
+//
+// MemoryArrayReader
+//
+// reads data from an array of memory
+//
+//==========================================================================
+
+MemoryArrayReader::MemoryArrayReader (const char *buffer, long length)
+{
+    buf.Resize(length);
+    memcpy(&buf[0], buffer, length);
+    Length=length;
+    FilePos=0;
+}
+
+MemoryArrayReader::~MemoryArrayReader ()
+{
+}
+
+long MemoryArrayReader::Tell () const
+{
+    return FilePos;
+}
+
+long MemoryArrayReader::Seek (long offset, int origin)
+{
+    switch (origin)
+    {
+    case SEEK_CUR:
+        offset+=FilePos;
+        break;
+
+    case SEEK_END:
+        offset+=Length;
+        break;
+
+    }
+    FilePos=clamp<long>(offset,0,Length-1);
+    return 0;
+}
+
+long MemoryArrayReader::Read (void *buffer, long len)
+{
+    if (len>Length-FilePos) len=Length-FilePos;
+    if (len<0) len=0;
+    memcpy(buffer,&buf[FilePos],len);
+    FilePos+=len;
+    return len;
+}
+
+char *MemoryArrayReader::Gets(char *strbuf, int len)
+{
+    return GetsFromBuffer((char*)&buf[0], strbuf, len);
 }

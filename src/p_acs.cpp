@@ -3542,14 +3542,14 @@ static const int LegacyRenderStyleIndices[] =
 	3,	// STYLE_SoulTrans,
 	4,	// STYLE_OptFuzzy,
 	5,	// STYLE_Stencil,
-	6,	// STYLE_AddStencil
-	7,	// STYLE_AddShaded
 	64,	// STYLE_Translucent
 	65,	// STYLE_Add,
 	66,	// STYLE_Shaded,
 	67,	// STYLE_TranslucentStencil,
 	68,	// STYLE_Shadow,
 	69,	// STYLE_Subtract,
+	6,	// STYLE_AddStencil
+	7,	// STYLE_AddShaded
 	-1
 };
 
@@ -5105,7 +5105,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args, const 
 
 					while ((source = it.Next()) != NULL)
 					{
-						P_LineAttack(activator, angle, range, pitch, damage, damagetype, pufftype, fhflags);
+						P_LineAttack(source, angle, range, pitch, damage, damagetype, pufftype, fhflags);
 					}
 				}
 			}

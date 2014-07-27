@@ -82,7 +82,7 @@ public:
 
 	// Streaming sounds.
 	virtual SoundStream *CreateStream(SoundStreamCallback callback, int buffbytes, int flags, int samplerate, void *userdata);
-	virtual SoundStream *OpenStream(const char *filename, int flags, int offset, int length);
+	virtual SoundStream *OpenStream(std::auto_ptr<FileReader> reader, int flags);
 
 	// Starts a sound.
 	virtual FISoundChannel *StartSound(SoundHandle sfx, float vol, int pitch, int chanflags, FISoundChannel *reuse_chan);
@@ -112,8 +112,6 @@ public:
 	virtual void UpdateListener(SoundListener *);
 	virtual void UpdateSounds();
 
-	virtual short *DecodeSample(int outlen, const void *coded, int sizebytes, ECodecType type);
-
 	virtual void MarkStartTime(FISoundChannel*);
 	virtual float GetAudibility(FISoundChannel*);
 
@@ -124,6 +122,16 @@ public:
 	virtual FString GatherStats();
 
 private:
+    struct {
+        bool EXT_EFX;
+        bool EXT_disconnect;
+    } ALC;
+    struct {
+        bool EXT_source_distance_model;
+        bool SOFT_deferred_updates;
+        bool SOFT_loop_points;
+    } AL;
+
 	// EFX Extension function pointer variables. Loaded after context creation
 	// if EFX is supported. These pointers may be context- or device-dependant,
 	// thus can't be static
@@ -164,6 +172,8 @@ private:
 	LPALGETAUXILIARYEFFECTSLOTF alGetAuxiliaryEffectSlotf;
 	LPALGETAUXILIARYEFFECTSLOTFV alGetAuxiliaryEffectSlotfv;
 
+    ALvoid (AL_APIENTRY*alDeferUpdatesSOFT)(void);
+    ALvoid (AL_APIENTRY*alProcessUpdatesSOFT)(void);
 
 	void LoadReverb(const ReverbContainer *env);
 	void PurgeStoppedSources();
@@ -172,33 +182,29 @@ private:
 	ALCdevice *Device;
 	ALCcontext *Context;
 
-	bool LoopPoints;
-	bool SrcDistanceModel;
-	bool DisconnectNotify;
-
-	std::vector<ALuint> Sources;
+	TArray<ALuint> Sources;
 
 	ALfloat SfxVolume;
 	ALfloat MusicVolume;
 
 	int SFXPaused;
-	std::vector<ALuint> FreeSfx;
-	std::vector<ALuint> PausableSfx;
-	std::vector<ALuint> ReverbSfx;
-	std::vector<ALuint> SfxGroup;
+	TArray<ALuint> FreeSfx;
+	TArray<ALuint> PausableSfx;
+	TArray<ALuint> ReverbSfx;
+	TArray<ALuint> SfxGroup;
 
 	const ReverbContainer *PrevEnvironment;
 
-	typedef std::map<WORD,ALuint> EffectMap;
-	ALuint EnvSlot;
-	EffectMap EnvEffects;
+    typedef TMap<WORD,ALuint> EffectMap;
+    typedef TMapIterator<WORD,ALuint> EffectMapIter;
+    ALuint EnvSlot;
+    ALuint EnvFilters[2];
+    EffectMap EnvEffects;
 
-	ALuint EnvFilters[2];
-	float LastWaterAbsorb;
+    bool WasInWater;
 
-    std::vector<SoundStream*> Streams;
+    TArray<OpenALSoundStream*> Streams;
     friend class OpenALSoundStream;
-    friend class OpenALCallbackStream;
 };
 
 #endif // NO_OPENAL

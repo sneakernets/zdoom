@@ -48,12 +48,16 @@ extern HINSTANCE g_hInst;
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <memory>
 
 #include "doomtype.h"
 #include <math.h>
 
 #include "fmodsound.h"
 #include "oalsound.h"
+
+#include "mpg123_decoder.h"
+#include "sndfile_decoder.h"
 
 #include "m_swap.h"
 #include "stats.h"
@@ -168,7 +172,7 @@ public:
 	{
 		return NULL;
 	}
-	SoundStream *OpenStream (const char *filename, int flags, int offset, int length)
+	SoundStream *OpenStream (std::auto_ptr<FileReader> reader, int flags)
 	{
 		return NULL;
 	}
@@ -300,6 +304,27 @@ void I_ShutdownSound()
 	}
 }
 
+const char *GetSampleTypeName(enum SampleType type)
+{
+    switch(type)
+    {
+        case SampleType_UInt8: return "Unsigned 8-bit";
+        case SampleType_Int16: return "Signed 16-bit";
+    }
+    return "(invalid sample type)";
+}
+
+const char *GetChannelConfigName(enum ChannelConfig chan)
+{
+    switch(chan)
+    {
+        case ChannelConfig_Mono: return "Mono";
+        case ChannelConfig_Stereo: return "Stereo";
+    }
+    return "(invalid channel config)";
+}
+
+
 CCMD (snd_status)
 {
 	GSnd->PrintStatus ();
@@ -338,9 +363,26 @@ FString SoundRenderer::GatherStats ()
 	return "No stats for this sound renderer.";
 }
 
-short *SoundRenderer::DecodeSample(int outlen, const void *coded, int sizebytes, ECodecType type)
+short *SoundRenderer::DecodeSample(int outlen, const void *coded, int sizebytes, ECodecType ctype)
 {
-	return NULL;
+    MemoryReader reader((const char*)coded, sizebytes);
+    short *samples = (short*)calloc(1, outlen);
+    ChannelConfig chans;
+    SampleType type;
+    int srate;
+
+    std::auto_ptr<SoundDecoder> decoder(CreateDecoder(&reader));
+    if(!decoder.get()) return samples;
+
+    decoder->getInfo(&srate, &chans, &type);
+    if(chans != ChannelConfig_Mono || type != SampleType_Int16)
+    {
+        DPrintf("Sample is not 16-bit mono\n");
+        return samples;
+    }
+
+    decoder->read((char*)samples, outlen);
+    return samples;
 }
 
 void SoundRenderer::DrawWaveDebug(int mode)
@@ -520,3 +562,51 @@ SoundHandle SoundRenderer::LoadSoundVoc(BYTE *sfxdata, int length)
 	return retval;
 }
 
+SoundStream *SoundRenderer::OpenStream(const char *url, int flags)
+{
+    return 0;
+}
+
+SoundDecoder *SoundRenderer::CreateDecoder(FileReader *reader)
+{
+    SoundDecoder *decoder = NULL;
+    int pos = reader->Tell();
+
+#ifdef HAVE_MPG123
+    decoder = new MPG123Decoder;
+    if(decoder->open(reader))
+        return decoder;
+    reader->Seek(pos, SEEK_SET);
+
+    delete decoder;
+    decoder = NULL;
+#endif
+#ifdef HAVE_SNDFILE
+    decoder = new SndFileDecoder;
+    if(decoder->open(reader))
+        return decoder;
+    reader->Seek(pos, SEEK_SET);
+
+    delete decoder;
+    decoder = NULL;
+#endif
+    return decoder;
+}
+
+
+// Default readAll implementation, for decoders that can't do anything better
+TArray<char> SoundDecoder::readAll()
+{
+    TArray<char> output;
+    size_t total = 0;
+    size_t got;
+
+    output.Resize(total+32768);
+    while((got=read(&output[total], output.Size()-total)) > 0)
+    {
+        total += got;
+        output.Resize(total*2);
+    }
+    output.Resize(total);
+    return output;
+}
