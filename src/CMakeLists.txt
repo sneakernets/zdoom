@@ -253,7 +253,11 @@ endif( GLEW_INCLUDE_DIR )
 # GLEW include directory
 include_directories( "${GLEW_INCLUDE_DIR}" )
 
-find_library( GLEW_LIBRARY NAMES glew32 GLEW )
+if( NOT WIN32 OR APPLE )
+	find_library( GLEW_LIBRARY libGLEW.so )
+else( NOT WIN32 OR APPLE )
+	find_library( GLEW_LIBRARY glew32 )
+endif( NOT WIN32 OR APPLE )
 
 if( NOT GLEW_LIBRARY )
 	message( SEND_ERROR "Could not find GLEW library files" )
@@ -662,6 +666,7 @@ if( WIN32 )
 	else( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 		set( SYSTEM_SOURCES ${SYSTEM_SOURCES} win32/zdoom.rc )
 	endif( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
+
 else( WIN32 )
 	set( SYSTEM_SOURCES_DIR sdl )
 	set( SYSTEM_SOURCES ${PLAT_SDL_SOURCES} )
