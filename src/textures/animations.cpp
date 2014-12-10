@@ -182,7 +182,7 @@ void FTextureManager::InitAnimated (void)
 		// Init animation
 		animtype = FAnimDef::ANIM_Forward;
 
-		for (anim_p = animdefs; *anim_p != -1; anim_p += 23)
+		for (anim_p = animdefs; *anim_p != 0xFF; anim_p += 23)
 		{
 			// make sure the current chunk of data is inside the lump boundaries.
 			if (anim_p + 22 >= animdefs + animatedlen)
