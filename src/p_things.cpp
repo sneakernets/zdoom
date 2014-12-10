@@ -402,13 +402,17 @@ void P_RemoveThing(AActor * actor)
 	// Don't remove live players.
 	if (actor->player == NULL || actor != actor->player->mo)
 	{
+		// Don't also remove owned inventory items
+		if (actor->IsKindOf(RUNTIME_CLASS(AInventory)) && static_cast<AInventory*>(actor)->Owner != NULL) return;
+
 		// be friendly to the level statistics. ;)
 		actor->ClearCounters();
 		actor->Destroy ();
 	}
+
 }
 
-bool P_Thing_Raise(AActor *thing)
+bool P_Thing_Raise(AActor *thing, AActor *raiser)
 {
 	FState * RaiseState = thing->GetRaiseState();
 	if (RaiseState == NULL)
@@ -441,7 +445,47 @@ bool P_Thing_Raise(AActor *thing)
 
 	thing->Revive();
 
+	if (raiser != NULL)
+	{
+		// Let's copy the friendliness of the one who raised it.
+		thing->CopyFriendliness(raiser, false);
+	}
+
 	thing->SetState (RaiseState);
+	return true;
+}
+
+bool P_Thing_CanRaise(AActor *thing)
+{
+	FState * RaiseState = thing->GetRaiseState();
+	if (RaiseState == NULL)
+	{
+		return false;
+	}
+	
+	AActor *info = thing->GetDefault();
+
+	// Check against real height and radius
+	int oldflags = thing->flags;
+	fixed_t oldheight = thing->height;
+	fixed_t oldradius = thing->radius;
+
+	thing->flags |= MF_SOLID;
+	thing->height = info->height;
+	thing->radius = info->radius;
+
+	bool check = P_CheckPosition (thing, thing->x, thing->y);
+
+	// Restore checked properties
+	thing->flags = oldflags;
+	thing->radius = oldradius;
+	thing->height = oldheight;
+
+	if (!check)
+	{
+		return false;
+	}
+
 	return true;
 }
 
