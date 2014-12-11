@@ -286,7 +286,7 @@ MIDIDevice *MIDIStreamer::CreateMIDIDevice(EMidiDevice devtype) const
 		{
 			// The creation of an OPL MIDI device can abort with an error if no GENMIDI lump can be found.
 			Printf("Unable to create OPL MIDI device: %s\nFalling back to FModEx playback", err.GetMessage());
-			return new FMODMIDIDevice;
+			//return new FMODMIDIDevice;
 		}
 
 	case MDEV_TIMIDITY:
