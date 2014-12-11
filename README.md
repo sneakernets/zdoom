@@ -33,9 +33,11 @@ Framerates are generally very good, playable in X11 but blazingly fast with Rasp
 ##Credits
 
 Shoutouts go out to:
-Chris/KCat from ZDoom Forums for starting work on the OpenAL port of ZDoom. Without it, sound would not have been possible.
-Blzut3 and `#doom-tech` on OFTC for comments and suggestions.
-Quasar for finding the humor of ZDoom running without FMOD.
-id Software for making Doom
+
+- Chris/KCat from ZDoom Forums for starting work on the OpenAL port of ZDoom. Without it, sound would not have been possible.
+- Blzut3 and `#doom-tech` on OFTC for comments and suggestions.
+- Quasar for finding the humor of ZDoom running without FMOD.
+- id Software for making Doom.
+- John Romero, for being awesome.
 
 This was originally "released" on Doom's 21st birthday, but time restraints made this release a day late. Oops!
