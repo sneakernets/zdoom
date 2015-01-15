@@ -1,0 +1,5 @@
+i_gui.cpp merge=ours
+i_input.cpp merge=ours
+i_joystick.cpp merge=ours
+i_main.cpp merge=ours
+sdlvideo.cpp merge=ours
