@@ -128,7 +128,6 @@ void DCanvas::DrawTextV(FFont *font, int normalcolor, int x, int y, const char *
 	{
 		va_list *more_p;
 		DWORD data;
-		void *ptrval;
 
 		switch (tag)
 		{

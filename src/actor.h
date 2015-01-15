@@ -785,6 +785,7 @@ public:
 	// These also set CF_INTERPVIEW for players.
 	void SetPitch(int p, bool interpolate);
 	void SetAngle(angle_t ang, bool interpolate);
+	void SetRoll(angle_t roll, bool interpolate);
 
 	const PClass *GetBloodType(int type = 0) const
 	{
@@ -985,6 +986,9 @@ public:
 	FNameNoInit DeathType;
 	const PClass *TeleFogSourceType;
 	const PClass *TeleFogDestType;
+	int RipperLevel;
+	int RipLevelMin;
+	int RipLevelMax;
 
 	FState *SpawnState;
 	FState *SeeState;
