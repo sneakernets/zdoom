@@ -293,7 +293,7 @@ ACTOR Actor native //: Thinker
 	action native A_SetPitch(float pitch, int flags = 0);
 	action native A_SetRoll(float roll, int flags = 0);
 	action native A_ScaleVelocity(float scale);
-	action native A_ChangeVelocity(float x = 0, float y = 0, float z = 0, int flags = 0);
+	action native A_ChangeVelocity(float x = 0, float y = 0, float z = 0, int flags = 0, int ptr = AAPTR_DEFAULT);
 	action native A_SetArg(int pos, int value);
 	action native A_SetUserVar(name varname, int value);
 	action native A_SetUserArray(name varname, int index, int value);
@@ -327,6 +327,7 @@ ACTOR Actor native //: Thinker
 	action native A_SetTeleFog(name oldpos, name newpos);
 	action native A_SwapTeleFog();
 	action native A_SetFloatBobPhase(int bob);
+	action native A_SetHealth(int health, int ptr = AAPTR_DEFAULT);
 	action native A_SetRipperLevel(int level);
 	action native A_SetRipMin(int min);
 	action native A_SetRipMax(int max);
