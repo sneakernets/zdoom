@@ -16,7 +16,7 @@ You need:
 
 Everything else is provided in the source tree.
 
-**NEW!** If you don't want to compile SDL2 and you have a Pi 2, just use this version at http://malus.exotica.org.uk/~buzz/pi/sdl/ that works with dispmanx. To use, install all packages in `sdl2/`, and type `export SDL2_VIDEODRIVER=dispmanx" in the terminal. 
+**NEW!** If you don't want to compile SDL2 and you have a Pi 2, just use this version at http://malus.exotica.org.uk/~buzz/pi/sdl/ that works with dispmanx. To use, install all packages in `sdl2/`, and type `export SDL2_VIDEODRIVER=dispmanx` in the terminal. 
 
 For SDL2, I recommend downloading and using the Simple2D install script located at
 
