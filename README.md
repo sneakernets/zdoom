@@ -1,4 +1,4 @@
-ZDoom for Raspberry Pi
+ZDoom for Raspberry Pi and Pi 2
 =====
 
 ZDoom is one of the most popular Doom source ports. This is an effort to bring that port to the Raspberry Pi. There is no FMOD required for sound, and it supports most EAX effects.
@@ -7,7 +7,7 @@ ZDoom is one of the most popular Doom source ports. This is an effort to bring t
 
 You need:
 
-* Raspberry Pi with Raspbian Stable
+* Raspberry Pi or Pi 2 with Raspbian Stable
 * OpenAL dev libraries
 * SDL2 libraries
 * libev-dev and libuv-dev (NEEDED!)
@@ -16,9 +16,9 @@ You need:
 
 Everything else is provided in the source tree.
 
-**NEW!** If you don't want to compile SDL2 and you have a Pi 2, just use this version at http://malus.exotica.org.uk/~buzz/pi/sdl/ that works with dispmanx. To use, install all packages in `sdl2/`, and type `export SDL2_VIDEODRIVER=dispmanx` in the terminal. 
+**NEW!** If you don't want to compile SDL2 and you have a Pi 2, just use this version at http://malus.exotica.org.uk/~buzz/pi/sdl/ that works with dispmanx. To use, install all packages in `sdl2/`, and type `export SDL2_VIDEODRIVER=dispmanx` in the terminal. This may not be needed, however. 
 
-For SDL2, I recommend downloading and using the Simple2D install script located at
+If you still want to compile SDL2, I recommend downloading and using the Simple2D install script located at
 
 `https://github.com/simple2d/simple2d/blob/master/simple2d.sh`
 ##Caveats
@@ -32,11 +32,9 @@ If the game slows down and becomes choppy after sounds play, it is likely OpenAL
 mmap = false
 ```
 
-**NOTE:** As of the SDL2 inclusion, you need to make sure you have `libev-dev` and `libuv-dev` packages installed before compiling SDL2. You also need to manually edit your `zdoom.ini` file to include `vid_forcesurface=true`. SDL2 is not fully compatible with Raspberry Pi, but I expect this to change in the coming months. As a consequence of this, performance has reduced significantly, until OpenGLES2 code for the video is working. You also cannot play in framebuffer mode, as SDL2 loses control of the keyboard. Again, This is SDL2's fault.
+**NOTE:** As of the SDL2 inclusion, you need to make sure you have `libev-dev` and `libuv-dev` packages installed before compiling SDL2. 
 
-
-
-This was originally based on the git version of zdoom as of January 16, 2015. Any changes to ZDoom since then will be merged, but not at the speed of zdoom master. If there is a new feature in ZDoom in the future that hasn't been merged, contact me through Issues and I'll resolve it.
+This was originally based on the git version of zdoom as of March 6, 2015. Any changes to ZDoom since then will be merged, but not at the speed of zdoom master. If there is a new feature in ZDoom in the future that hasn't been merged, contact me through Issues and I'll resolve it.
 
 ##Credits
 
@@ -48,5 +46,6 @@ Shoutouts go out to:
 - id Software for making Doom.
 - John Romero, for being awesome.
 - Mental, for pointing out the obvious. I owe you one.
+- Jools Wills from the RetroPie project for his custom SDL2 libraries. He saved the project!
 
 This was originally "released" on Doom's 21st birthday, but time restraints made this release a day late. Oops!
