@@ -755,12 +755,14 @@ bool PIT_CheckLine(line_t *ld, const FBoundingBox &box, FCheckPosition &tm)
 	if (!(tm.thing->flags & MF_DROPOFF) &&
 		!(tm.thing->flags & (MF_NOGRAVITY | MF_NOCLIP)))
 	{
-		secplane_t frontplane = ld->frontsector->floorplane;
-		secplane_t backplane = ld->backsector->floorplane;
+		secplane_t frontplane, backplane;
 #ifdef _3DFLOORS
 		// Check 3D floors as well
 		frontplane = P_FindFloorPlane(ld->frontsector, tm.thing->x, tm.thing->y, tm.thing->floorz);
 		backplane = P_FindFloorPlane(ld->backsector, tm.thing->x, tm.thing->y, tm.thing->floorz);
+#else
+		frontplane = ld->frontsector->floorplane;
+		backplane = ld->backsector->floorplane;
 #endif
 		if (frontplane.c < STEEPSLOPE || backplane.c < STEEPSLOPE)
 		{
@@ -898,6 +900,82 @@ static bool CheckRipLevel(AActor *victim, AActor *projectile)
 {
 	if (victim->RipLevelMin > 0 && projectile->RipperLevel < victim->RipLevelMin) return false;
 	if (victim->RipLevelMax > 0 && projectile->RipperLevel > victim->RipLevelMax) return false;
+	return true;
+}
+
+
+//==========================================================================
+//
+// Isolated to keep the code readable and allow reuse in other attacks
+//
+//==========================================================================
+
+static bool CanAttackHurt(AActor *victim, AActor *shooter)
+{
+	// players are never subject to infighting settings and are always allowed
+	// to harm / be harmed by anything.
+	if (!victim->player && !shooter->player)
+	{
+		int infight;
+		if (level.flags2 & LEVEL2_TOTALINFIGHTING) infight = 1;
+		else if (level.flags2 & LEVEL2_NOINFIGHTING) infight = -1;
+		else infight = infighting;
+
+		if (infight < 0)
+		{
+			// -1: Monsters cannot hurt each other, but make exceptions for
+			//     friendliness and hate status.
+			if (shooter->flags & MF_SHOOTABLE)
+			{
+				// Question: Should monsters be allowed to shoot barrels in this mode?
+				// The old code does not.
+				if (victim->flags3 & MF3_ISMONSTER)
+				{
+					// Monsters that are clearly hostile can always hurt each other
+					if (!victim->IsHostile(shooter))
+					{
+						// The same if the shooter hates the target
+						if (victim->tid == 0 || shooter->TIDtoHate != victim->tid)
+						{
+							return false;
+						}
+					}
+				}
+			}
+		}
+		else if (infight == 0)
+		{
+			//  0: Monsters cannot hurt same species except 
+			//     cases where they are clearly supposed to do that
+			if (victim->IsFriend(shooter))
+			{
+				// Friends never harm each other, unless the shooter has the HARMFRIENDS set.
+				if (!(shooter->flags7 & MF7_HARMFRIENDS)) return false;
+			}
+			else
+			{
+				if (victim->TIDtoHate != 0 && victim->TIDtoHate == shooter->TIDtoHate)
+				{
+					// [RH] Don't hurt monsters that hate the same victim as you do
+					return false;
+				}
+				if (victim->GetSpecies() == shooter->GetSpecies() && !(victim->flags6 & MF6_DOHARMSPECIES))
+				{
+					// Don't hurt same species or any relative -
+					// but only if the target isn't one's hostile.
+					if (!victim->IsHostile(shooter))
+					{
+						// Allow hurting monsters the shooter hates.
+						if (victim->tid == 0 || shooter->TIDtoHate != victim->tid)
+						{
+							return false;
+						}
+					}
+				}
+			}
+		}
+		// else if (infight==1) every shot hurts anything - no further tests needed
+	}
 	return true;
 }
 
@@ -1137,10 +1215,6 @@ bool PIT_CheckThing(AActor *thing, FCheckPosition &tm)
 		// [RH] Extend DeHacked infighting to allow for monsters
 		// to never fight each other
 
-		// [Graf Zahl] Why do I have the feeling that this didn't really work anymore now
-		// that ZDoom supports friendly monsters?
-
-
 		if (tm.thing->target != NULL)
 		{
 			if (thing == tm.thing->target)
@@ -1148,69 +1222,9 @@ bool PIT_CheckThing(AActor *thing, FCheckPosition &tm)
 				return true;
 			}
 
-			// players are never subject to infighting settings and are always allowed
-			// to harm / be harmed by anything.
-			if (!thing->player && !tm.thing->target->player)
+			if (!CanAttackHurt(thing, tm.thing->target))
 			{
-				int infight;
-				if (level.flags2 & LEVEL2_TOTALINFIGHTING) infight = 1;
-				else if (level.flags2 & LEVEL2_NOINFIGHTING) infight = -1;
-				else infight = infighting;
-
-				if (infight < 0)
-				{
-					// -1: Monsters cannot hurt each other, but make exceptions for
-					//     friendliness and hate status.
-					if (tm.thing->target->flags & MF_SHOOTABLE)
-					{
-						// Question: Should monsters be allowed to shoot barrels in this mode?
-						// The old code does not.
-						if (thing->flags3 & MF3_ISMONSTER)
-						{
-							// Monsters that are clearly hostile can always hurt each other
-							if (!thing->IsHostile(tm.thing->target))
-							{
-								// The same if the shooter hates the target
-								if (thing->tid == 0 || tm.thing->target->TIDtoHate != thing->tid)
-								{
-									return false;
-								}
-							}
-						}
-					}
-				}
-				else if (infight == 0)
-				{
-					//  0: Monsters cannot hurt same species except 
-					//     cases where they are clearly supposed to do that
-					if (thing->IsFriend(tm.thing->target))
-					{
-						// Friends never harm each other, unless the shooter has the HARMFRIENDS set.
-						if (!(thing->flags7 & MF7_HARMFRIENDS)) return false;
-					}
-					else
-					{
-						if (thing->TIDtoHate != 0 && thing->TIDtoHate == tm.thing->target->TIDtoHate)
-						{
-							// [RH] Don't hurt monsters that hate the same thing as you do
-							return false;
-						}
-						if (thing->GetSpecies() == tm.thing->target->GetSpecies() && !(thing->flags6 & MF6_DOHARMSPECIES))
-						{
-							// Don't hurt same species or any relative -
-							// but only if the target isn't one's hostile.
-							if (!thing->IsHostile(tm.thing->target))
-							{
-								// Allow hurting monsters the shooter hates.
-								if (thing->tid == 0 || tm.thing->target->TIDtoHate != thing->tid)
-								{
-									return false;
-								}
-							}
-						}
-					}
-				}
-				// else if (infight==1) any shot hurts anything - no further tests
+				return false;
 			}
 		}
 		if (!(thing->flags & MF_SHOOTABLE))
@@ -2964,7 +2978,6 @@ bool FSlide::BounceWall(AActor *mo)
 	deltaangle = (2 * lineangle) - moveangle;
 	mo->angle = deltaangle;
 
-	lineangle >>= ANGLETOFINESHIFT;
 	deltaangle >>= ANGLETOFINESHIFT;
 
 	movelen = fixed_t(sqrt(double(mo->velx)*mo->velx + double(mo->vely)*mo->vely));
@@ -3150,9 +3163,6 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 		fixed_t trX = trace.x + FixedMul(trace.dx, in->frac);
 		fixed_t trY = trace.y + FixedMul(trace.dy, in->frac);
 		fixed_t dist = FixedMul(attackrange, in->frac);
-
-
-		int dir = aimpitch < 0 ? 1 : aimpitch > 0 ? -1 : 0;
 
 		frontflag = P_PointOnLineSide(shootthing->x, shootthing->y, li);
 
