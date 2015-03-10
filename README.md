@@ -13,6 +13,8 @@ You need:
 * libev-dev and libuv-dev (NEEDED!)
 * cmake 2.4 or greater
 * gcc (4.x recommended)
+* MPG123 dev libraries
+* libsndfile dev libraries
 
 Everything else is provided in the source tree.
 
