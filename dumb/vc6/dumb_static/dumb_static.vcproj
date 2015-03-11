@@ -1212,10 +1212,6 @@
 				Name="it"
 				>
 				<File
-					RelativePath="..\..\src\it\filter.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\src\it\itload.c"
 					>
 					<FileConfiguration
@@ -2043,6 +2039,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\internal\lpc.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\internal\mulsc.h"
 					>
 				</File>
 				<File

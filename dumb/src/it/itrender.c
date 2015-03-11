@@ -27,6 +27,7 @@
 #include "internal/lpc.h"
 
 #include "internal/resampler.h"
+#include "internal/mulsc.h"
 
 // #define BIT_ARRAY_BULLSHIT
 
@@ -556,9 +557,6 @@ static void it_reset_filter_state(IT_FILTER_STATE *state)
 
 
 
-#if 1
-extern void it_filter(DUMB_CLICK_REMOVER *cr, IT_FILTER_STATE *state, sample_t *dst, int32 pos, sample_t *src, int32 size, int step, int sampfreq, int cutoff, int resonance);
-#else
 #define LOG10 2.30258509299
 
 /* IMPORTANT: This function expects one extra sample in 'src' so it can apply
@@ -604,7 +602,6 @@ static void it_filter_int(DUMB_CLICK_REMOVER *cr, IT_FILTER_STATE *state, sample
 
 #define INT_FILTERS
 #ifdef INT_FILTERS
-#define MULSCA(a, b) ((int)((LONG_LONG)((a) << 4) * (b) >> 32))
 #define SCALEB 12
 	{
 		int ai = (int)(a * (1 << (16+SCALEB)));
@@ -841,7 +838,6 @@ static void it_filter(DUMB_CLICK_REMOVER *cr, IT_FILTER_STATE *state, sample_t *
 #endif
 	it_filter_int( cr, state, dst, pos, src, size, step, sampfreq, cutoff, resonance );
 }
-#endif
 
 
 
