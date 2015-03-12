@@ -301,7 +301,7 @@ MusInfo *MusInfo::GetWaveDumper(const char *filename, int rate)
 //
 //==========================================================================
 
-static MIDIStreamer *CreateMIDIStreamer(std::auto_ptr<FileReader> &reader, EMidiDevice devtype, EMIDIType miditype)
+static MIDIStreamer *CreateMIDIStreamer(FileReader &reader, EMidiDevice devtype, EMIDIType miditype)
 {
 	switch (miditype)
 	{
@@ -377,7 +377,7 @@ static EMIDIType IdentifyMIDIType(DWORD *id, int size)
 //
 //==========================================================================
 
-MusInfo *I_RegisterSong (std::auto_ptr<FileReader> reader, int device)
+MusInfo *I_RegisterSong (FileReader *reader, int device)
 {
 	MusInfo *info = NULL;
 	const char *fmt;
@@ -386,13 +386,15 @@ MusInfo *I_RegisterSong (std::auto_ptr<FileReader> reader, int device)
 
 	if (nomusic)
 	{
+		delete reader;
 		return 0;
 	}
 
-    if(reader->Read(id, 32) != 32 || reader->Seek(-32, SEEK_CUR) != 0)
-    {
-        return 0;
-    }
+	if(reader->Read(id, 32) != 32 || reader->Seek(-32, SEEK_CUR) != 0)
+	{
+		delete reader;
+		return 0;
+	}
 
 #ifndef _WIN32
 	// non-Windows platforms don't support MDEV_MMAPI so map to MDEV_SNDSYS
@@ -410,21 +412,24 @@ MusInfo *I_RegisterSong (std::auto_ptr<FileReader> reader, int device)
         if (reader->Read(gzipped, len) != len)
         {
             delete[] gzipped;
+            delete reader;
             return NULL;
         }
+        delete reader;
 
-        std::auto_ptr<MemoryArrayReader> reader2(new MemoryArrayReader(NULL, 0));
-        if(!ungzip(gzipped, len, reader2->GetArray()))
+        reader = new MemoryArrayReader(NULL, 0);
+        if(!ungzip(gzipped, len, ((MemoryArrayReader*)reader)->GetArray()))
         {
             delete[] gzipped;
+            delete reader;
             return 0;
         }
         delete[] gzipped;
-        reader2->UpdateLength();
+        ((MemoryArrayReader*)reader)->UpdateLength();
 
-        reader.reset(reader2.release());
         if(reader->Read(id, 32) != 32 || reader->Seek(-32, SEEK_CUR) != 0)
         {
+            delete reader;
             return 0;
         }
     }
@@ -435,7 +440,7 @@ MusInfo *I_RegisterSong (std::auto_ptr<FileReader> reader, int device)
 		EMidiDevice devtype = (EMidiDevice)device;
 
 retry_as_sndsys:
-		info = CreateMIDIStreamer(reader, devtype, miditype);
+		info = CreateMIDIStreamer(*reader, devtype, miditype);
 		if (info != NULL && !info->IsValid())
 		{
 			delete info;
@@ -449,7 +454,7 @@ retry_as_sndsys:
 #ifdef _WIN32
 		if (info == NULL && devtype != MDEV_MMAPI && snd_mididevice >= 0)
 		{
-			info = CreateMIDIStreamer(reader, MDEV_MMAPI, miditype);
+			info = CreateMIDIStreamer(*reader, MDEV_MMAPI, miditype);
 		}
 #endif
 	}
@@ -460,17 +465,17 @@ retry_as_sndsys:
 		(id[0] == MAKE_ID('D','B','R','A') && id[1] == MAKE_ID('W','O','P','L')) ||		// DosBox Raw OPL
 		(id[0] == MAKE_ID('A','D','L','I') && *((BYTE *)id + 4) == 'B'))		// Martin Fernandez's modified IMF
 	{
-		info = new OPLMUSSong (reader);
+		info = new OPLMUSSong (*reader);
 	}
 	// Check for game music
 	else if ((fmt = GME_CheckFormat(id[0])) != NULL && fmt[0] != '\0')
 	{
-		info = GME_OpenSong(reader, fmt);
+		info = GME_OpenSong(*reader, fmt);
 	}
 	// Check for module formats
 	else
 	{
-		info = MOD_OpenSong(reader);
+		info = MOD_OpenSong(*reader);
 	}
 
     if (info == NULL)
@@ -483,6 +488,7 @@ retry_as_sndsys:
             reader->Seek(8, SEEK_CUR);
             if (reader->Read (&subid, 4) != 4)
             {
+                delete reader;
                 return 0;
             }
             reader->Seek(-12, SEEK_CUR);
@@ -490,7 +496,7 @@ retry_as_sndsys:
             if (subid == (('C')|(('D')<<8)|(('D')<<16)|(('A')<<24)))
             {
                 // This is a CDDA file
-                info = new CDDAFile (reader);
+                info = new CDDAFile (*reader);
             }
         }
 
@@ -503,8 +509,12 @@ retry_as_sndsys:
         {
             // Let the sound system figure out what it is.
             info = new StreamSong (reader);
+			// Assumed ownership
+			reader = NULL;
         }
     }
+
+	delete reader;
 
 	if (info && !info->IsValid ())
 	{

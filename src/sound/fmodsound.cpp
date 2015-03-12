@@ -309,12 +309,12 @@ class FMODStreamCapsule : public SoundStream
 public:
 	FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner, const char *url)
 		: Owner(owner), Stream(NULL), Channel(NULL),
-		  UserData(NULL), Callback(NULL), URL(url), Ended(false)
+		  UserData(NULL), Callback(NULL), URL(url), Reader(NULL), Ended(false)
 	{
 		SetStream(stream);
 	}
 
-    FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner, std::auto_ptr<FileReader> reader)
+    FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner, FileReader *reader)
         : Owner(owner), Stream(NULL), Channel(NULL),
           UserData(NULL), Callback(NULL), Reader(reader), Ended(false)
     {
@@ -323,7 +323,7 @@ public:
 
 	FMODStreamCapsule(void *udata, SoundStreamCallback callback, FMODSoundRenderer *owner)
 		: Owner(owner), Stream(NULL), Channel(NULL),
-		  UserData(udata), Callback(callback), Ended(false)
+		  UserData(udata), Callback(callback), Reader(NULL), Ended(false)
 	{}
 
 	~FMODStreamCapsule()
@@ -336,6 +336,7 @@ public:
 		{
 			Stream->release();
 		}
+		delete Reader;
 	}
 
 	void SetStream(FMOD::Sound *stream)
@@ -605,7 +606,7 @@ private:
 	FMOD::Channel *Channel;
 	void *UserData;
 	SoundStreamCallback Callback;
-    std::auto_ptr<FileReader> Reader;
+    FileReader *Reader;
 	FString URL;
 	bool Ended;
 	bool JustStarted;
@@ -1666,7 +1667,7 @@ static FMOD_RESULT F_CALLBACK seek_reader_callback(void *handle, unsigned int po
 //
 //==========================================================================
 
-SoundStream *FMODSoundRenderer::OpenStream(std::auto_ptr<FileReader> reader, int flags)
+SoundStream *FMODSoundRenderer::OpenStream(FileReader *reader, int flags)
 {
     FMOD_MODE mode;
     FMOD_CREATESOUNDEXINFO exinfo;
@@ -1702,7 +1703,7 @@ SoundStream *FMODSoundRenderer::OpenStream(std::auto_ptr<FileReader> reader, int
         exinfo.dlsname = patches;
     }
 
-    name.Format("_FileReader_%p", reader.get());
+    name.Format("_FileReader_%p", reader);
     result = Sys->createSound(name, mode, &exinfo, &stream);
     if(result == FMOD_ERR_FORMAT && exinfo.dlsname != NULL)
     {
