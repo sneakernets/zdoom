@@ -950,6 +950,8 @@ int P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage,
 	int fakeDamage = 0;
 	int holdDamage = 0;
 	
+	if (damage < 0) damage = 0;
+
 	if (target == NULL || !((target->flags & MF_SHOOTABLE) || (target->flags6 & MF6_VULNERABLE)))
 	{ // Shouldn't happen
 		return -1;
@@ -1031,6 +1033,8 @@ int P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage,
 	{
 		target->velx = target->vely = target->velz = 0;
 	}
+
+	player = target->player;
 	if (!(flags & DMG_FORCED))	// DMG_FORCED skips all special damage checks, TELEFRAG_DAMAGE may not be reduced at all
 	{
 		if (target->flags2 & MF2_DORMANT)
@@ -1038,9 +1042,9 @@ int P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage,
 			// Invulnerable, and won't wake up
 			return -1;
 		}
+
 		if (damage < TELEFRAG_DAMAGE) // TELEFRAG_DAMAGE may not be reduced at all or it may not guarantee its effect.
 		{
-			player = target->player;
 			if (player && damage > 1)
 			{
 				// Take half damage in trainer mode
@@ -1116,6 +1120,10 @@ int P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage,
 					return -1;
 				}
 			}
+		}
+		if (target->flags5 & MF5_NODAMAGE)
+		{
+			damage = 0;
 		}
 	}
 	if (damage < 0)

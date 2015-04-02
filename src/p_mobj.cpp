@@ -6159,11 +6159,6 @@ int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FN
 {
 	FState *death;
 
-	if (flags5 & MF5_NODAMAGE)
-	{
-		return 0;
-	}
-
 	// If the actor does not have a corresponding death state, then it does not take damage.
 	// Note that DeathState matches every kind of damagetype, so an actor has that, it can
 	// be hurt with any type of damage. Exception: Massacre damage always succeeds, because
@@ -6443,7 +6438,8 @@ void PrintMiscActorInfo(AActor *query)
 			}
 		}
 		static const char * renderstyles[]= {"None", "Normal", "Fuzzy", "SoulTrans",
-			"OptFuzzy", "Stencil", "Translucent", "Add", "Shaded", "TranslucentStencil"};
+			"OptFuzzy", "Stencil", "Translucent", "Add", "Shaded", "TranslucentStencil",
+			"Shadow", "Subtract", "AddStencil", "AddShaded"};
 
 		Printf("%s @ %p has the following flags:\n   flags: %x", query->GetTag(), query, query->flags);
 		for (flagi = 0; flagi <= 31; flagi++)
