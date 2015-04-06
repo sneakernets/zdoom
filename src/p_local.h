@@ -160,7 +160,8 @@ void P_CheckFakeFloorTriggers (AActor *mo, fixed_t oldz, bool oldz_has_viewheigh
 //
 // [RH] P_THINGS
 //
-extern TMap<int, const PClass *> SpawnableThings;
+extern FClassMap SpawnableThings;
+extern FClassMap StrifeTypes;
 
 bool	P_Thing_Spawn (int tid, AActor *source, int type, angle_t angle, bool fog, int newtid);
 bool	P_Thing_Projectile (int tid, AActor *source, int type, const char * type_name, angle_t angle,
@@ -174,6 +175,7 @@ void P_RemoveThing(AActor * actor);
 bool P_Thing_Raise(AActor *thing, AActor *raiser);
 bool P_Thing_CanRaise(AActor *thing);
 const PClass *P_GetSpawnableType(int spawnnum);
+void InitSpawnablesFromMapinfo();
 
 //
 // P_MAPUTL
@@ -589,19 +591,6 @@ struct polyspawns_t
 	fixed_t y;
 	short angle;
 	short type;
-};
-
-enum
-{
-	PO_HEX_ANCHOR_TYPE = 3000,
-	PO_HEX_SPAWN_TYPE,
-	PO_HEX_SPAWNCRUSH_TYPE,
-
-	// [RH] Thing numbers that don't conflict with Doom things
-	PO_ANCHOR_TYPE = 9300,
-	PO_SPAWN_TYPE,
-	PO_SPAWNCRUSH_TYPE,
-	PO_SPAWNHURT_TYPE
 };
 
 extern int po_NumPolyobjs;

@@ -47,6 +47,7 @@
 #include "v_video.h"
 #include "gameconfigfile.h"
 #include "resourcefiles/resourcefile.h"
+#include "version.h"
 
 
 CVAR (Bool, queryiwad, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
@@ -136,12 +137,6 @@ void FIWadManager::ParseIWadInfo(const char *fn, const char *data, int datasize)
 					sc.MustGetStringName("=");
 					sc.MustGetString();
 					iwad->Autoname = sc.String;
-				}
-				else if (sc.Compare("Group"))
-				{
-					sc.MustGetStringName("=");
-					sc.MustGetString();
-					iwad->Group = sc.String;
 				}
 				else if (sc.Compare("Config"))
 				{
@@ -252,7 +247,7 @@ void FIWadManager::ParseIWadInfo(const char *fn, const char *data, int datasize)
 
 //==========================================================================
 //
-// Lool for IWAD definition lump
+// Look for IWAD definition lump
 //
 //==========================================================================
 
@@ -301,11 +296,11 @@ int FIWadManager::ScanIWAD (const char *iwad)
 			FResourceLump *lump = iwadfile->GetLump(ii);
 
 			CheckLumpName(lump->Name);
-			if (lump->FullName != NULL)
+			if (lump->FullName.IsNotEmpty())
 			{
 				if (strnicmp(lump->FullName, "maps/", 5) == 0)
 				{
-					FString mapname(lump->FullName+5, strcspn(lump->FullName+5, "."));
+					FString mapname(&lump->FullName[5], strcspn(&lump->FullName[5], "."));
 					CheckLumpName(mapname);
 				}
 			}
@@ -392,7 +387,6 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 	bool iwadparmfound = false;
 	FString custwad;
 
-	ParseIWadInfos(zdoom_wad);
 	wads.Resize(mIWadNames.Size());
 	foundwads.Resize(mIWads.Size());
 	memset(&foundwads[0], 0, foundwads.Size() * sizeof(foundwads[0]));
@@ -504,19 +498,19 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 	if (numwads == 0)
 	{
 		I_FatalError ("Cannot find a game IWAD (doom.wad, doom2.wad, heretic.wad, etc.).\n"
-					  "Did you install ZDoom properly? You can do either of the following:\n"
+					  "Did you install " GAMENAME " properly? You can do either of the following:\n"
 					  "\n"
 #if defined(_WIN32)
-					  "1. Place one or more of these wads in the same directory as ZDoom.\n"
-					  "2. Edit your zdoom-username.ini and add the directories of your iwads\n"
+					  "1. Place one or more of these wads in the same directory as " GAMENAME ".\n"
+					  "2. Edit your " GAMENAMELOWERCASE "-username.ini and add the directories of your iwads\n"
 					  "to the list beneath [IWADSearch.Directories]");
 #elif defined(__APPLE__)
-					  "1. Place one or more of these wads in ~/Library/Application Support/zdoom/\n"
-					  "2. Edit your ~/Library/Preferences/zdoom.ini and add the directories\n"
+					  "1. Place one or more of these wads in ~/Library/Application Support/" GAMENAMELOWERCASE "/\n"
+					  "2. Edit your ~/Library/Preferences/" GAMENAMELOWERCASE ".ini and add the directories\n"
 					  "of your iwads to the list beneath [IWADSearch.Directories]");
 #else
-					  "1. Place one or more of these wads in ~/.config/zdoom/.\n"
-					  "2. Edit your ~/.config/zdoom/zdoom.ini and add the directories of your\n"
+					  "1. Place one or more of these wads in ~/.config/" GAMENAMELOWERCASE "/.\n"
+					  "2. Edit your ~/.config/" GAMENAMELOWERCASE "/" GAMENAMELOWERCASE ".ini and add the directories of your\n"
 					  "iwads to the list beneath [IWADSearch.Directories]");
 #endif
 	}

@@ -1665,7 +1665,7 @@ AActor *SpawnMapThing(int index, FMapThing *mt, int position)
 	if (dumpspawnedthings)
 	{
 		Printf("%5d: (%5d, %5d, %5d), doomednum = %5d, flags = %04x, type = %s\n",
-			index, mt->x>>FRACBITS, mt->y>>FRACBITS, mt->z>>FRACBITS, mt->type, mt->flags, 
+			index, mt->x>>FRACBITS, mt->y>>FRACBITS, mt->z>>FRACBITS, mt->EdNum, mt->flags, 
 			spawned? spawned->GetClass()->TypeName.GetChars() : "(none)");
 	}
 	T_AddSpawnedThing(spawned);
@@ -1785,7 +1785,8 @@ void P_LoadThings (MapData * map)
 		mti[i].x = LittleShort(mt->x) << FRACBITS;
 		mti[i].y = LittleShort(mt->y) << FRACBITS;
 		mti[i].angle = LittleShort(mt->angle);
-		mti[i].type = LittleShort(mt->type);
+		mti[i].EdNum = LittleShort(mt->type);
+		mti[i].info = DoomEdMap.CheckKey(mti[i].EdNum);
 	}
 	delete [] mtp;
 }
@@ -1825,7 +1826,8 @@ void P_LoadThings2 (MapData * map)
 		mti[i].y = LittleShort(mth[i].y)<<FRACBITS;
 		mti[i].z = LittleShort(mth[i].z)<<FRACBITS;
 		mti[i].angle = LittleShort(mth[i].angle);
-		mti[i].type = LittleShort(mth[i].type);
+		mti[i].EdNum = LittleShort(mth[i].type);
+		mti[i].info = DoomEdMap.CheckKey(mti[i].EdNum);
 		mti[i].flags = LittleShort(mth[i].flags);
 		mti[i].special = mth[i].special;
 		for(int j=0;j<5;j++) mti[i].args[j] = mth[i].args[j];
@@ -3334,32 +3336,16 @@ void P_GetPolySpots (MapData * map, TArray<FNodeBuilder::FPolyStart> &spots, TAr
 {
 	if (map->HasBehavior)
 	{
-		int spot1, spot2, spot3, anchor;
-
-		if (gameinfo.gametype == GAME_Hexen)
-		{
-			spot1 = PO_HEX_SPAWN_TYPE;
-			spot2 = PO_HEX_SPAWNCRUSH_TYPE;
-			anchor = PO_HEX_ANCHOR_TYPE;
-		}
-		else
-		{
-			spot1 = PO_SPAWN_TYPE;
-			spot2 = PO_SPAWNCRUSH_TYPE;
-			anchor = PO_ANCHOR_TYPE;
-		}
-		spot3 = PO_SPAWNHURT_TYPE;
-
 		for (unsigned int i = 0; i < MapThingsConverted.Size(); ++i)
 		{
-			if (MapThingsConverted[i].type == spot1 || MapThingsConverted[i].type == spot2 || 
-				MapThingsConverted[i].type == spot3 || MapThingsConverted[i].type == anchor)
+			FDoomEdEntry *mentry = MapThingsConverted[i].info;
+			if (mentry != NULL && mentry->Type == NULL && mentry->Special >= SMT_PolyAnchor && mentry->Special <= SMT_PolySpawnHurt)
 			{
 				FNodeBuilder::FPolyStart newvert;
 				newvert.x = MapThingsConverted[i].x;
 				newvert.y = MapThingsConverted[i].y;
 				newvert.polynum = MapThingsConverted[i].angle;
-				if (MapThingsConverted[i].type == anchor)
+				if (mentry->Special == SMT_PolyAnchor)
 				{
 					anchors.Push (newvert);
 				}
