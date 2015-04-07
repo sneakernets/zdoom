@@ -6,6 +6,7 @@ IWad
 	Autoname = "square.square"
 	Game = "Doom"
 	Config = "Square"
+	Mapinfo = "mapinfo/mindefaults.txt"
 	MustContain = "SQU-IWAD", "E1A1"
 	BannerColors = "ff ff ff", "80 00 80"
 }
@@ -16,6 +17,7 @@ IWad
 	Autoname = "square.squareware"
 	Game = "Doom"
 	Config = "Square"
+	Mapinfo = "mapinfo/mindefaults.txt"
 	MustContain = "SQU-SWE1", "E1A1"
 	BannerColors = "ff ff ff", "80 00 80"
 }
@@ -36,7 +38,7 @@ IWad
 	Name = "Hacx 2.0"
 	Game = "Doom"
 	Config = "Hacx"
-	Autoname = "hacx.2"
+	Autoname = "hacx.hacx2"
 	Mapinfo = "mapinfo/hacxharm.txt"
 	MustContain = "MAP01", "HACX-E"
 	BannerColors = "ff ff ff", "00 88 22"
@@ -47,7 +49,7 @@ IWad
 	Name = "Hacx: Twitch'n Kill"
 	Game = "Doom"
 	Config = "Hacx"
-	Autoname = "hacx.1"
+	Autoname = "hacx.hacx1"
 	Mapinfo = "mapinfo/hacxharm.txt"
 	MustContain = "MAP01", "HACX-R"
 	BannerColors = "00 00 a8", "a8 a8 a8"
@@ -67,7 +69,7 @@ IWad
 IWad
 {
 	Name = "Chex(R) Quest 3"
-	Autoname = "chex.3"
+	Autoname = "chex.chex3"
 	Game = "Chex"
 	Config = "Chex"
 	Mapinfo = "mapinfo/chex.txt"
@@ -79,7 +81,7 @@ IWad
 IWad
 {
 	Name = "Chex(R) Quest"
-	Autoname = "chex.1"
+	Autoname = "chex.chex1"
 	Game = "Chex"
 	Config = "Chex"
 	Mapinfo = "mapinfo/chex.txt"
