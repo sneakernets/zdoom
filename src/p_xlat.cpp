@@ -104,7 +104,8 @@ void P_TranslateLineDef (line_t *ld, maplinedef_t *mld)
 	// line also needs to have its ID set to the same as its tag.
 	// An external conversion program would need to do this more
 	// intelligently.
-	ld->id = tag;
+	ld->ClearIds();
+	ld->SetMainId(tag);
 
 	// 0 specials are never translated.
 	if (special == 0)
@@ -304,7 +305,7 @@ void P_TranslateTeleportThings ()
 
 	while ( (dest = iterator.Next()) )
 	{
-		if (dest->Sector->tag == 0)
+		if (dest->Sector->GetMainTag() == 0)
 		{
 			dest->tid = 1;
 			dest->AddToHash ();

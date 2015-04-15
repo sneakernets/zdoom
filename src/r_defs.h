@@ -633,6 +633,12 @@ struct sector_t
 		return pos == floor? floorplane:ceilingplane;
 	}
 
+	bool HasTag(int checktag) const;
+	void SetMainTag(int tagnum);
+	int GetMainTag() const;
+	void ClearTags();
+	static void HashTags();
+
 	bool PlaneMoving(int pos);
 
 
@@ -899,6 +905,13 @@ struct line_t
 	sector_t	*frontsector, *backsector;
 	int 		validcount;	// if == validcount, already checked
 	int			locknumber;	// [Dusk] lock number for special
+
+
+	void SetMainId(int newid);
+	int GetMainId() const;
+	void ClearIds();
+	bool HasId(int id) const;
+	static void HashIds();
 };
 
 // phares 3/14/98
