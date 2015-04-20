@@ -67,6 +67,7 @@
 #include "v_font.h"
 #include "r_data/colormaps.h"
 #include "farchive.h"
+#include "p_setup.h"
 
 static FRandom pr_script("FScript");
 
@@ -1164,7 +1165,7 @@ void FParser::SF_ObjSector(void)
 	}
 
 	t_return.type = svt_int;
-	t_return.value.i = mo ? mo->Sector->GetMainTag() : 0; // nullptr check
+	t_return.value.i = mo ? tagManager.GetFirstSectorTag(mo->Sector) : 0; // nullptr check
 }
 
 //==========================================================================
@@ -2225,9 +2226,6 @@ void FParser::SF_RunCommand(void)
 //
 //
 //==========================================================================
-
-// any linedef type
-extern void P_TranslateLineDef (line_t *ld, maplinedef_t *mld);
 
 void FParser::SF_LineTrigger()
 {
@@ -4314,7 +4312,7 @@ void  FParser::SF_KillInSector()
 
 		while ((mo=it.Next()))
 		{
-			if (mo->flags3&MF3_ISMONSTER && mo->Sector->HasTag(tag)) P_DamageMobj(mo, NULL, NULL, 1000000, NAME_Massacre);
+			if (mo->flags3&MF3_ISMONSTER && tagManager.SectorHasTag(mo->Sector, tag)) P_DamageMobj(mo, NULL, NULL, 1000000, NAME_Massacre);
 		}
 	}
 }
@@ -4382,15 +4380,12 @@ void FParser::SF_SetLineTrigger()
 		FLineIdIterator itr(id);
 		while ((i = itr.Next()) >= 0)
 		{
-			if (t_argc == 2) tag = lines[i].GetMainId();
 			maplinedef_t mld;
 			mld.special = spec;
 			mld.tag = tag;
 			mld.flags = 0;
 			int f = lines[i].flags;
 			P_TranslateLineDef(&lines[i], &mld);
-			lines[i].ClearIds();
-			lines[i].SetMainId(tag);
 			lines[i].flags = (lines[i].flags & (ML_MONSTERSCANACTIVATE | ML_REPEAT_SPECIAL | ML_SPAC_MASK | ML_FIRSTSIDEONLY)) |
 				(f & ~(ML_MONSTERSCANACTIVATE | ML_REPEAT_SPECIAL | ML_SPAC_MASK | ML_FIRSTSIDEONLY));
 
@@ -4401,26 +4396,13 @@ void FParser::SF_SetLineTrigger()
 
 //==========================================================================
 //
-// new for GZDoom: Changes a sector's tag
-// (I only need this because MAP02 in RTC-3057 has some issues with the GL 
-// renderer that I can't fix without the scripts. But loading a FS on top on
-// ACS still works so I can hack around it with this.)
+//
 //
 //==========================================================================
 
 void FParser::SF_ChangeTag()
 {
-	if (CheckArgs(2))
-	{
-		FSectorTagIterator it(t_argv[0].value.i);
-		int secnum;
-		while ((secnum = it.Next()) >= 0)
-		{
-			sectors[secnum].ClearTags();
-			sectors[secnum].SetMainTag(t_argv[1].value.i);
-		}
-		sector_t::HashTags();
-	}
+	// Development garbage!
 }
 
 
