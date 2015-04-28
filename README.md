@@ -1,3 +1,5 @@
+**NOTE:** This fork is outdated, as all changes have been merged into rheit master. Please use the official source code!
+
 ZDoom for Raspberry Pi and Pi 2
 =====
 
